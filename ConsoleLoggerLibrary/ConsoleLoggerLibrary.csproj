@@ -15,6 +15,7 @@
     <RepositoryUrl>https://github.com/CodeFontana/ConsoleLogger</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>CodeFoxtrot Logging Log ConsoleLogger Logger</PackageTags>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
