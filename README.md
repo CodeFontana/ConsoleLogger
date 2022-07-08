@@ -3,12 +3,17 @@
 
 * Cross-platform implementation supporting asynchronous Console logging.
 * Configurable default minimum log level.
+* Single, Multi or Custom log entry formats.
 * Indent multiline messages for easier reading and analysis.
 * Configurable color scheme for Console log messages, for easier reading.
 
-![image](https://user-images.githubusercontent.com/41308769/175711925-3e02c240-e211-46e1-9c6f-1eb16a68300d.png)
-![image](https://user-images.githubusercontent.com/41308769/175713316-b1025222-2465-4eb7-abee-8333098a0683.png)
+![Snag_16287bf1](https://user-images.githubusercontent.com/41308769/177916624-85be1c05-490d-4c6b-90c8-fb77ed04950d.png)
 
+### Single-line Format
+![Snag_1628ce28](https://user-images.githubusercontent.com/41308769/177916665-9a8e8447-9833-4aa2-a0d3-9fca1cd46eb0.png)
+
+### Multi-line Format
+![Snag_162914c6](https://user-images.githubusercontent.com/41308769/177916695-50500daf-be95-48d6-82ad-b3e183c5f215.png)
 
 ## How to use
 
@@ -38,6 +43,7 @@ using ConsoleLoggerLibrary;
     },
     "ConsoleLogger": {
       "LogMinLevel": "Debug",
+      "MultilineFormat": false,
       "IndentMultilineMessages": true,
       "EnableConsoleColors": true,
       "LogLevelColors": {
@@ -137,6 +143,7 @@ internal class Program
                     builder.AddConsoleLogger(configure =>
                     {
                         configure.LogMinLevel = LogLevel.Trace;
+                        configure.MultiLineFormat = false;
                         configure.IndentMultilineMessages = true;
                         configure.EnableConsoleColors = true;
                         configure.LogLevelColors = new Dictionary<LogLevel, ConsoleColor>()
@@ -185,9 +192,10 @@ IndentMultilineMessages=**false**
   "Summary": "Nice"
 }
 ```
+Note: The IndentMultilineMessages option is only for the Single-Line message format.
 
 ## Roadmap
-* Support custom formatter for log message.
+* Support for UTC timestamps, instead of local time.
 
 ## Reference
 https://docs.microsoft.com/en-us/dotnet/core/extensions/custom-logging-provider
