@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace ConsoleLoggerDemo;
 public class App : IHostedService
@@ -48,12 +49,22 @@ public class App : IHostedService
 
     public async Task ExecuteAsync()
     {
-        _logger.LogCritical("Hello, Critical!");
-        _logger.LogDebug("Hello, Debug!");
-        _logger.LogError("Hello, Error!");
-        _logger.LogInformation("Hello, World!");
         _logger.LogTrace("Hello, Trace!");
+        _logger.LogDebug("Hello, Debug!");
+        _logger.LogInformation("Hello, World!");
         _logger.LogWarning("Hello, Warning!");
+        _logger.LogError("Hello, Error!");
+        _logger.LogCritical(new Exception("Meltdown imminent!!"), "Hello, Critical!");
+
+        var weatherForecast = new
+        {
+            Date = DateTime.Now.ToShortDateString(),
+            Location = "Center Moriches",
+            TemperatureCelsius = 20,
+            Summary = "Nice"
+        };
+
+        _logger.LogInformation(JsonSerializer.Serialize(weatherForecast, new JsonSerializerOptions { WriteIndented = true }));
 
         await Task.Delay(1);
     }

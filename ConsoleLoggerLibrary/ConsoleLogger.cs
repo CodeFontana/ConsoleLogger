@@ -30,54 +30,6 @@ internal class ConsoleLogger : ILogger
         return null;
     }
 
-    public void Log(string message, LogLevel logLevel)
-    {
-        LogMessage msg = new(logLevel, _categoryName, message);
-        _consoleLoggerProvider.Log(msg);
-    }
-
-    public void Log(Exception e)
-    {
-        LogMessage msg = new(LogLevel.Error, _categoryName, e.Message);
-        _consoleLoggerProvider.Log(msg);
-    }
-
-    public void LogCritical(string message)
-    {
-        LogMessage msg = new(LogLevel.Critical, _categoryName, message);
-        _consoleLoggerProvider.Log(msg);
-    }
-
-    public void LogDebug(string message)
-    {
-        LogMessage msg = new(LogLevel.Debug, _categoryName, message);
-        _consoleLoggerProvider.Log(msg);
-    }
-
-    public void LogError(string message)
-    {
-        LogMessage msg = new(LogLevel.Error, _categoryName, message);
-        _consoleLoggerProvider.Log(msg);
-    }
-
-    public void LogInformation(string message)
-    {
-        LogMessage msg = new(LogLevel.Information, _categoryName, message);
-        _consoleLoggerProvider.Log(msg);
-    }
-
-    public void LogTrace(string message)
-    {
-        LogMessage msg = new(LogLevel.Trace, _categoryName, message);
-        _consoleLoggerProvider.Log(msg);
-    }
-
-    public void LogWarning(string message)
-    {
-        LogMessage msg = new(LogLevel.Warning, _categoryName, message);
-        _consoleLoggerProvider.Log(msg);
-    }
-
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
     {
         if (IsEnabled(logLevel) == false)
@@ -86,31 +38,7 @@ internal class ConsoleLogger : ILogger
         }
 
         ArgumentNullException.ThrowIfNull(nameof(formatter));
-
-        switch (logLevel)
-        {
-            case LogLevel.Trace:
-                LogTrace(formatter(state, exception));
-                break;
-            case LogLevel.Debug:
-                LogDebug(formatter(state, exception));
-                break;
-            case LogLevel.Warning:
-                LogWarning(formatter(state, exception));
-                break;
-            case LogLevel.Error:
-                LogError(formatter(state, exception));
-                break;
-            case LogLevel.Critical:
-                LogCritical(formatter(state, exception));
-                break;
-            case LogLevel.None:
-                Log(formatter(state, exception), LogLevel.None);
-                break;
-            case LogLevel.Information:
-            default:
-                LogInformation(formatter(state, exception));
-                break;
-        }
+        string message = formatter(state, exception);
+        _consoleLoggerProvider.EnqueueMessage(new LogMessage(message, exception, logLevel, _categoryName, eventId));
     }
 }

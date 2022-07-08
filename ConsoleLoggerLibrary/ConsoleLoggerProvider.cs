@@ -14,8 +14,10 @@ internal class ConsoleLoggerProvider : ILoggerProvider, IDisposable
     private readonly Task _processMessages;
 
     public LogLevel LogMinLevel { get; private set; } = LogLevel.Trace;
+    public bool MultiLineFormat { get; set; } = false;
     public bool IndentMultilineMessages { get; set; } = true;
     public bool EnableConsoleColors { get; set; } = true;
+    public Func<LogMessage, string> LogEntryFormatter { get; set; }
 
     public Dictionary<LogLevel, ConsoleColor> LogLevelColors { get; set; } = new()
     {
@@ -29,12 +31,16 @@ internal class ConsoleLoggerProvider : ILoggerProvider, IDisposable
     };
 
     public ConsoleLoggerProvider(LogLevel logMinLevel = LogLevel.Trace,
+                                 bool multiLineFormat = false,
                                  bool indentMultilineMessages = true,
-                                 bool enableConsoleColors = true) : this(new()
+                                 bool enableConsoleColors = true,
+                                 Func<LogMessage, string> logEntryFormatter = null): this(new()
                                  {
                                     LogMinLevel = logMinLevel,
+                                    MultiLineFormat = multiLineFormat,
                                     IndentMultilineMessages = indentMultilineMessages,
-                                    EnableConsoleColors = enableConsoleColors
+                                    EnableConsoleColors = enableConsoleColors,
+                                    LogEntryFormatter = logEntryFormatter
                                  })
     {
         
@@ -43,9 +49,11 @@ internal class ConsoleLoggerProvider : ILoggerProvider, IDisposable
     public ConsoleLoggerProvider(ConsoleLoggerOptions options)
     {
         LogMinLevel = options.LogMinLevel;
+        MultiLineFormat = options.MultiLineFormat;
         IndentMultilineMessages = options.IndentMultilineMessages;
         EnableConsoleColors = options.EnableConsoleColors;
         LogLevelColors = options.LogLevelColors;
+        LogEntryFormatter = options.LogEntryFormatter;
         _processMessages = Task.Factory.StartNew(DequeueMessages, this, TaskCreationOptions.LongRunning);
     }
 
@@ -59,42 +67,81 @@ internal class ConsoleLoggerProvider : ILoggerProvider, IDisposable
     {
         foreach (LogMessage message in _messageQueue.GetConsumingEnumerable())
         {
-            if (EnableConsoleColors)
+            if (LogEntryFormatter != null)
             {
-                ConsoleColor originalColor = Console.ForegroundColor;
-                Console.Write($"{message.TimeStamp}|");
-                Console.ForegroundColor = LogLevelColors[message.LogLevel];
-                Console.Write(LogMessage.LogLevelToString(message.LogLevel));
-                Console.ForegroundColor = originalColor;
-                Console.Write($"|{message.CategoryName}|");
-                Console.ForegroundColor = LogLevelColors[message.LogLevel];
-
-                if (IndentMultilineMessages)
-                {
-                    Console.WriteLine(message.PaddedMessage);
-                }
-                else
-                {
-                    Console.WriteLine(message.Message);
-                }
-
-                Console.ForegroundColor = originalColor;
+                Console.WriteLine(LogEntryFormatter(message));
+            }
+            else if (MultiLineFormat)
+            {
+                WriteMultiLineFormatMessage(message);
             }
             else
             {
-                if (IndentMultilineMessages)
-                {
-                    Console.WriteLine(message.PaddedMessage);
-                }
-                else
-                {
-                    Console.WriteLine(message.Message);
-                }
+                WriteSingleLineFormatMessage(message);
             }
         }
     }
 
-    private void EnqueueMessage(LogMessage message)
+    private void WriteSingleLineFormatMessage(LogMessage message)
+    {
+        if (EnableConsoleColors)
+        {
+            ConsoleColor originalColor = Console.ForegroundColor;
+            Console.Write($"{message.TimeStamp}|");
+            Console.ForegroundColor = LogLevelColors[message.LogLevel];
+            Console.Write(LogMessage.LogLevelToString(message.LogLevel));
+            Console.ForegroundColor = originalColor;
+            Console.Write($"|{message.CategoryName}|");
+            Console.ForegroundColor = LogLevelColors[message.LogLevel];
+
+            if (IndentMultilineMessages)
+            {
+                Console.WriteLine(message.PaddedMessage);
+            }
+            else
+            {
+                Console.WriteLine(message.Message);
+            }
+
+            Console.ForegroundColor = originalColor;
+        }
+        else
+        {
+            if (IndentMultilineMessages)
+            {
+                Console.WriteLine($"{message.Header}{message.PaddedMessage}");
+            }
+            else
+            {
+                Console.WriteLine($"{message.Header}{message.Message}");
+            }
+        }
+    }
+
+    private void WriteMultiLineFormatMessage(LogMessage message)
+    {
+        if (EnableConsoleColors)
+        {
+            ConsoleColor originalColor = Console.ForegroundColor;
+            Console.Write($"[{message.TimeStamp}|");
+            Console.ForegroundColor = LogLevelColors[message.LogLevel];
+            Console.Write(LogMessage.LogLevelToString(message.LogLevel));
+            Console.ForegroundColor = originalColor;
+            Console.Write($"|{message.CategoryName}]{Environment.NewLine}");
+            Console.ForegroundColor = LogLevelColors[message.LogLevel];
+            Console.WriteLine($"{message.Message}{Environment.NewLine}");
+            Console.ForegroundColor = originalColor;
+        }
+        else
+        {
+            Console.Write($"[{message.TimeStamp}|");
+            Console.Write(LogMessage.LogLevelToString(message.LogLevel));
+            Console.Write($"|{message.CategoryName}]{Environment.NewLine}");
+            Console.WriteLine($"{message.Message}{Environment.NewLine}");
+        }
+    }
+
+    internal void EnqueueMessage(LogMessage message)
     {
         if (_messageQueue.IsAddingCompleted == false)
         {

@@ -6,6 +6,8 @@ public class ConsoleLoggerOptions
 {
     public LogLevel LogMinLevel { get; set; } = LogLevel.Trace;
 
+    public bool MultiLineFormat { get; set; } = false;
+
     public bool IndentMultilineMessages { get; set; } = true;
 
     public bool EnableConsoleColors { get; set; } = true;
@@ -20,4 +22,6 @@ public class ConsoleLoggerOptions
         [LogLevel.Critical] = ConsoleColor.DarkRed,
         [LogLevel.None] = ConsoleColor.White
     };
+
+    public Func<LogMessage, string> LogEntryFormatter { get; set; }
 }

@@ -66,6 +66,13 @@ public static class ConsoleLoggerExtensions
             options.LogMinLevel = level;
         }
 
+        string multiLineFormat = consoleLogger["MultilineFormat"];
+
+        if (string.IsNullOrWhiteSpace(multiLineFormat) == false && bool.TryParse(multiLineFormat, out bool multiLine))
+        {
+            options.MultiLineFormat = multiLine;
+        }
+
         string indentMultilineMessages = consoleLogger["IndentMultilineMessages"];
 
         if (string.IsNullOrWhiteSpace(indentMultilineMessages) == false && bool.TryParse(indentMultilineMessages, out bool indent))
