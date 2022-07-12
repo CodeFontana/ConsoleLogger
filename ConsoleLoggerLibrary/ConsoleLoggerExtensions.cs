@@ -6,6 +6,13 @@ namespace ConsoleLoggerLibrary;
 
 public static class ConsoleLoggerExtensions
 {
+    public static ILoggingBuilder AddConsoleLogger(this ILoggingBuilder builder)
+    {
+        builder.Services.AddSingleton<ILoggerProvider, ConsoleLoggerProvider>(sp => new ConsoleLoggerProvider(LogLevel.Information));
+        builder.SetMinimumLevel(LogLevel.Information);
+        return builder;
+    }
+
     public static ILoggingBuilder AddConsoleLogger(this ILoggingBuilder builder, LogLevel minLevel)
     {
         builder.Services.AddSingleton<ILoggerProvider, ConsoleLoggerProvider>(sp => new ConsoleLoggerProvider(minLevel));
