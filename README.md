@@ -43,6 +43,7 @@ using ConsoleLoggerLibrary;
     },
     "ConsoleLogger": {
       "LogMinLevel": "Debug",
+      "UseUtcTimestamp": false,
       "MultilineFormat": false,
       "IndentMultilineMessages": true,
       "EnableConsoleColors": true,
@@ -121,6 +122,7 @@ internal class Program
                     builder.AddConsoleLogger(configure =>
                     {
                         configure.LogMinLevel = LogLevel.Trace;
+                        configure.UseUtcTimestamp = false;
                         configure.MultiLineFormat = false;
                         configure.IndentMultilineMessages = true;
                         configure.EnableConsoleColors = true;
@@ -173,7 +175,7 @@ IndentMultilineMessages=**false**
 Note: The IndentMultilineMessages option is only for the Single-Line message format.
 
 ## Roadmap
-* Support for UTC timestamps, instead of local time.
+* No current plans
 
 ## Reference
 https://docs.microsoft.com/en-us/dotnet/core/extensions/custom-logging-provider
