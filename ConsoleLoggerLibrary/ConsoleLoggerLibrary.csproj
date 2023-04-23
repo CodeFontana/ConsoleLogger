@@ -5,12 +5,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
     <PackageId>CodeFoxtrot.ConsoleLogger</PackageId>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <Authors>CodeFoxtrot</Authors>
     <Company>CodeFoxtrot</Company>
     <Product>ConsoleLogger</Product>
     <Description>Simple ILogger implementation, providing asynchronous and configurable Console logging capabilities.</Description>
-    <Copyright>2022</Copyright>
+    <Copyright>2023</Copyright>
     <PackageProjectUrl>https://github.com/CodeFontana/ConsoleLogger</PackageProjectUrl>
     <RepositoryUrl>https://github.com/CodeFontana/ConsoleLogger</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
