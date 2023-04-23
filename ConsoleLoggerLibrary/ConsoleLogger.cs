@@ -37,8 +37,9 @@ internal class ConsoleLogger : ILogger
             return;
         }
 
-        ArgumentNullException.ThrowIfNull(nameof(formatter));
+        ArgumentException.ThrowIfNullOrEmpty(nameof(formatter));
         string message = formatter(state, exception);
-        _consoleLoggerProvider.EnqueueMessage(new LogMessage(message, exception, logLevel, _categoryName, eventId));
+        LogMessage logMessage = new(message, exception, logLevel, _categoryName, eventId, _consoleLoggerProvider.UseUtcTimestamp);
+        _consoleLoggerProvider.EnqueueMessage(logMessage);
     }
 }

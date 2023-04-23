@@ -14,6 +14,7 @@ internal class ConsoleLoggerProvider : ILoggerProvider, IDisposable
     private readonly Task _processMessages;
 
     public LogLevel LogMinLevel { get; private set; } = LogLevel.Trace;
+    public bool UseUtcTimestamp { get; set; } = false;
     public bool MultiLineFormat { get; set; } = false;
     public bool IndentMultilineMessages { get; set; } = true;
     public bool EnableConsoleColors { get; set; } = true;
@@ -31,12 +32,14 @@ internal class ConsoleLoggerProvider : ILoggerProvider, IDisposable
     };
 
     public ConsoleLoggerProvider(LogLevel logMinLevel = LogLevel.Trace,
+                                 bool useUtcTimestamp = false,
                                  bool multiLineFormat = false,
                                  bool indentMultilineMessages = true,
                                  bool enableConsoleColors = true,
                                  Func<LogMessage, string> logEntryFormatter = null): this(new()
                                  {
                                     LogMinLevel = logMinLevel,
+                                    UseUtcTimestamp = useUtcTimestamp,
                                     MultiLineFormat = multiLineFormat,
                                     IndentMultilineMessages = indentMultilineMessages,
                                     EnableConsoleColors = enableConsoleColors,
@@ -49,6 +52,7 @@ internal class ConsoleLoggerProvider : ILoggerProvider, IDisposable
     public ConsoleLoggerProvider(ConsoleLoggerOptions options)
     {
         LogMinLevel = options.LogMinLevel;
+        UseUtcTimestamp = options.UseUtcTimestamp;
         MultiLineFormat = options.MultiLineFormat;
         IndentMultilineMessages = options.IndentMultilineMessages;
         EnableConsoleColors = options.EnableConsoleColors;

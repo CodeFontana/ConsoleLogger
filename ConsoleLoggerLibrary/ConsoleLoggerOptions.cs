@@ -6,6 +6,8 @@ public class ConsoleLoggerOptions
 {
     public LogLevel LogMinLevel { get; set; } = LogLevel.Trace;
 
+    public bool UseUtcTimestamp { get; set; } = false;
+
     public bool MultiLineFormat { get; set; } = false;
 
     public bool IndentMultilineMessages { get; set; } = true;
