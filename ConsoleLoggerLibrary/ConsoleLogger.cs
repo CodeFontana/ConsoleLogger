@@ -1,7 +1,6 @@
-﻿using ConsoleLoggerLibrary;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
-namespace ConsleLoggerLibrary;
+namespace ConsoleLoggerLibrary;
 
 internal class ConsoleLogger : ILogger
 {
