@@ -131,12 +131,20 @@ public static class ConsoleLoggerExtensions
         Dictionary<LogLevel, ConsoleColor> logLevelColors =
             consoleLogger.GetSection("LogLevelColors").GetChildren().ToDictionary(x =>
             {
-                Enum.TryParse(x.Key, out LogLevel level);
+                if (Enum.TryParse(x.Key, out LogLevel level) == false)
+                {
+                    throw new ArgumentException($"Invalid LogLevel value: {x.Key}");
+                }
+
                 return level;
             },
             x =>
             {
-                Enum.TryParse(x.Value, out ConsoleColor color);
+                if (Enum.TryParse(x.Value, out ConsoleColor color) == false)
+                {
+                    throw new ArgumentException($"Invalid ConsoleColor value: {x.Value}");
+                }
+
                 return color;
             });
 
