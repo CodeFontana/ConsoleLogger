@@ -2,7 +2,7 @@
 
 namespace ConsoleLoggerLibrary;
 
-internal class ConsoleLogger : ILogger
+internal sealed class ConsoleLogger : ILogger
 {
     private readonly ConsoleLoggerProvider _consoleLoggerProvider;
     private readonly string _categoryName;

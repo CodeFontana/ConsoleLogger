@@ -2,7 +2,7 @@
 
 namespace ConsoleLoggerLibrary;
 
-public class ConsoleLoggerOptions
+public sealed class ConsoleLoggerOptions
 {
     public LogLevel LogMinLevel { get; set; } = LogLevel.Trace;
 

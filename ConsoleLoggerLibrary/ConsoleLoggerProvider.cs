@@ -6,7 +6,7 @@ namespace ConsoleLoggerLibrary;
 
 [UnsupportedOSPlatform("browser")]
 [ProviderAlias("ConsoleLogger")]
-internal class ConsoleLoggerProvider : ILoggerProvider, IDisposable
+internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
 {
     private readonly ConcurrentDictionary<string, ConsoleLogger> _loggers = new(StringComparer.OrdinalIgnoreCase);
     private readonly BlockingCollection<LogMessage> _messageQueue = new(1024);

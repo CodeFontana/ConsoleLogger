@@ -2,7 +2,7 @@
 
 namespace ConsoleLoggerLibrary;
 
-public class LogMessage
+public sealed class LogMessage
 {
     public string Message { get; init; }
     public Exception Exception { get; init; }
