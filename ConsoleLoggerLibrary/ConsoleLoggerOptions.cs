@@ -25,5 +25,5 @@ public sealed class ConsoleLoggerOptions
         [LogLevel.None] = ConsoleColor.White
     };
 
-    public Func<LogMessage, string> LogEntryFormatter { get; set; }
+    public Func<LogMessage, string>? LogEntryFormatter { get; set; }
 }

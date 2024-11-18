@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Runtime.Versioning;
+using Microsoft.Extensions.Logging;
 
 namespace ConsoleLoggerLibrary;
 
@@ -17,7 +17,7 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
     public bool MultiLineFormat { get; set; } = false;
     public bool IndentMultilineMessages { get; set; } = true;
     public bool EnableConsoleColors { get; set; } = true;
-    public Func<LogMessage, string> LogEntryFormatter { get; set; }
+    public Func<LogMessage, string>? LogEntryFormatter { get; set; }
 
     public Dictionary<LogLevel, ConsoleColor> LogLevelColors { get; set; } = new()
     {
@@ -35,17 +35,17 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
                                  bool multiLineFormat = false,
                                  bool indentMultilineMessages = true,
                                  bool enableConsoleColors = true,
-                                 Func<LogMessage, string> logEntryFormatter = null): this(new()
+                                 Func<LogMessage, string>? logEntryFormatter = null) : this(new()
                                  {
-                                    LogMinLevel = logMinLevel,
-                                    UseUtcTimestamp = useUtcTimestamp,
-                                    MultiLineFormat = multiLineFormat,
-                                    IndentMultilineMessages = indentMultilineMessages,
-                                    EnableConsoleColors = enableConsoleColors,
-                                    LogEntryFormatter = logEntryFormatter
+                                     LogMinLevel = logMinLevel,
+                                     UseUtcTimestamp = useUtcTimestamp,
+                                     MultiLineFormat = multiLineFormat,
+                                     IndentMultilineMessages = indentMultilineMessages,
+                                     EnableConsoleColors = enableConsoleColors,
+                                     LogEntryFormatter = logEntryFormatter
                                  })
     {
-        
+
     }
 
     public ConsoleLoggerProvider(ConsoleLoggerOptions options)
@@ -60,9 +60,9 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
         _processMessages = Task.Factory.StartNew(DequeueMessages, this, TaskCreationOptions.LongRunning);
     }
 
-    private static void DequeueMessages(object state)
+    private static void DequeueMessages(object? state)
     {
-        ConsoleLoggerProvider consoleLogger = (ConsoleLoggerProvider)state;
+        ConsoleLoggerProvider consoleLogger = (ConsoleLoggerProvider)state!;
         consoleLogger.DequeueMessages();
     }
 

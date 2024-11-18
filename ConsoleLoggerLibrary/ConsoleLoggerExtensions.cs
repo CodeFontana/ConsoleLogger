@@ -64,39 +64,39 @@ public static class ConsoleLoggerExtensions
         return builder;
     }
 
-    public static ILoggingBuilder AddConsoleLogger(this ILoggingBuilder builder, IConfiguration configuration, Action<ConsoleLoggerOptions> configure = null)
+    public static ILoggingBuilder AddConsoleLogger(this ILoggingBuilder builder, IConfiguration configuration, Action<ConsoleLoggerOptions>? configure = null)
     {
-        ConsoleLoggerProvider consoleLoggerProvider = CreateFromConfiguration(configuration, configure = null);
+        ConsoleLoggerProvider? consoleLoggerProvider = CreateFromConfiguration(configuration, configure = null);
 
         if (consoleLoggerProvider != null)
         {
             builder.Services.AddSingleton<ILoggerProvider, ConsoleLoggerProvider>(
                 sp => consoleLoggerProvider);
+            builder.SetMinimumLevel(consoleLoggerProvider.LogMinLevel);
         }
 
-        builder.SetMinimumLevel(consoleLoggerProvider.LogMinLevel);
         return builder;
     }
 
-    private static ConsoleLoggerProvider CreateFromConfiguration(IConfiguration configuration, Action<ConsoleLoggerOptions> configure)
+    private static ConsoleLoggerProvider? CreateFromConfiguration(IConfiguration configuration, Action<ConsoleLoggerOptions>? configure)
     {
-        IConfigurationSection consoleLogger = configuration.GetSection("Logging:ConsoleLogger");
+        IConfigurationSection? consoleLogger = configuration.GetSection("Logging:ConsoleLogger");
 
-        if (consoleLogger == null)
+        if (consoleLogger is null)
         {
             return null;
         }
 
         ConsoleLoggerOptions options = new();
-        string minLevel = consoleLogger["LogMinLevel"];
+        string? minLevel = consoleLogger["LogMinLevel"];
 
-        if (string.IsNullOrWhiteSpace(minLevel) == false 
+        if (string.IsNullOrWhiteSpace(minLevel) == false
             && Enum.TryParse(minLevel, out LogLevel level))
         {
             options.LogMinLevel = level;
         }
 
-        string useUtcTimestamp = consoleLogger["UseUtcTimestamp"];
+        string? useUtcTimestamp = consoleLogger["UseUtcTimestamp"];
 
         if (string.IsNullOrWhiteSpace(useUtcTimestamp) == false
             && bool.TryParse(useUtcTimestamp, out bool useUtcTime))
@@ -104,25 +104,25 @@ public static class ConsoleLoggerExtensions
             options.UseUtcTimestamp = useUtcTime;
         }
 
-        string multiLineFormat = consoleLogger["MultilineFormat"];
+        string? multiLineFormat = consoleLogger["MultilineFormat"];
 
-        if (string.IsNullOrWhiteSpace(multiLineFormat) == false 
+        if (string.IsNullOrWhiteSpace(multiLineFormat) == false
             && bool.TryParse(multiLineFormat, out bool multiLine))
         {
             options.MultiLineFormat = multiLine;
         }
 
-        string indentMultilineMessages = consoleLogger["IndentMultilineMessages"];
+        string? indentMultilineMessages = consoleLogger["IndentMultilineMessages"];
 
-        if (string.IsNullOrWhiteSpace(indentMultilineMessages) == false 
+        if (string.IsNullOrWhiteSpace(indentMultilineMessages) == false
             && bool.TryParse(indentMultilineMessages, out bool indent))
         {
             options.IndentMultilineMessages = indent;
         }
 
-        string enableConsoleColors = consoleLogger["EnableConsoleColors"];
+        string? enableConsoleColors = consoleLogger["EnableConsoleColors"];
 
-        if (string.IsNullOrWhiteSpace(enableConsoleColors) == false 
+        if (string.IsNullOrWhiteSpace(enableConsoleColors) == false
             && bool.TryParse(enableConsoleColors, out bool colors))
         {
             options.EnableConsoleColors = colors;
