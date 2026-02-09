@@ -32,8 +32,8 @@
 	<!-- .NET 9 dependencies -->
 	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.12" />
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.9" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.9" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.12" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.12" />
 	</ItemGroup>
 
 	<!-- .NET 10 dependencies -->
