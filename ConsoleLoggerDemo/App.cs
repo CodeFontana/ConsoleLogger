@@ -64,5 +64,8 @@ public class App : IHostedService
 
         string message = JsonSerializer.Serialize(weatherForecast, _jsonOptions);
         _logger.LogInformation("{message}", message);
+
+        _logger.LogInformation("Press any key to exit...");
+        Console.ReadKey();
     }
 }
