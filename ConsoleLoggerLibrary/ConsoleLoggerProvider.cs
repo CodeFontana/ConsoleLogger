@@ -8,8 +8,10 @@ namespace ConsoleLoggerLibrary;
 [ProviderAlias("ConsoleLogger")]
 internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
 {
+    private const int DefaultQueueCapacity = 1024;
+
     private readonly ConcurrentDictionary<string, ConsoleLogger> _loggers = new(StringComparer.OrdinalIgnoreCase);
-    private readonly BlockingCollection<LogMessage> _messageQueue = new(1024);
+    private readonly BlockingCollection<LogMessage> _messageQueue = new(DefaultQueueCapacity);
     private readonly Task _processMessages;
     private long _droppedMessageCount;
 
@@ -94,61 +96,65 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
 
     private void WriteSingleLineFormatMessage(LogMessage message)
     {
-        if (EnableConsoleColors)
+        if (EnableConsoleColors == false)
         {
-            ConsoleColor originalColor = Console.ForegroundColor;
+            string body = IndentMultilineMessages ? message.PaddedMessage : message.Message;
+            Console.WriteLine($"{message.Header}{body}");
+            return;
+        }
+
+        ConsoleColor originalColor = Console.ForegroundColor;
+        ConsoleColor levelColor = GetLevelColor(message.LogLevel, originalColor);
+
+        try
+        {
             Console.Write($"{message.TimeStamp}|");
-            Console.ForegroundColor = LogLevelColors[message.LogLevel];
+            Console.ForegroundColor = levelColor;
             Console.Write(LogMessage.LogLevelToString(message.LogLevel));
             Console.ForegroundColor = originalColor;
             Console.Write($"|{message.CategoryName}|");
-            Console.ForegroundColor = LogLevelColors[message.LogLevel];
-
-            if (IndentMultilineMessages)
-            {
-                Console.WriteLine(message.PaddedMessage);
-            }
-            else
-            {
-                Console.WriteLine(message.Message);
-            }
-
-            Console.ForegroundColor = originalColor;
+            Console.ForegroundColor = levelColor;
+            Console.WriteLine(IndentMultilineMessages ? message.PaddedMessage : message.Message);
         }
-        else
+        finally
         {
-            if (IndentMultilineMessages)
-            {
-                Console.WriteLine($"{message.Header}{message.PaddedMessage}");
-            }
-            else
-            {
-                Console.WriteLine($"{message.Header}{message.Message}");
-            }
+            Console.ForegroundColor = originalColor;
         }
     }
 
     private void WriteMultiLineFormatMessage(LogMessage message)
     {
-        if (EnableConsoleColors)
-        {
-            ConsoleColor originalColor = Console.ForegroundColor;
-            Console.Write($"[{message.TimeStamp}|");
-            Console.ForegroundColor = LogLevelColors[message.LogLevel];
-            Console.Write(LogMessage.LogLevelToString(message.LogLevel));
-            Console.ForegroundColor = originalColor;
-            Console.Write($"|{message.CategoryName}]{Environment.NewLine}");
-            Console.ForegroundColor = LogLevelColors[message.LogLevel];
-            Console.WriteLine($"{message.Message}{Environment.NewLine}");
-            Console.ForegroundColor = originalColor;
-        }
-        else
+        if (EnableConsoleColors == false)
         {
             Console.Write($"[{message.TimeStamp}|");
             Console.Write(LogMessage.LogLevelToString(message.LogLevel));
             Console.Write($"|{message.CategoryName}]{Environment.NewLine}");
             Console.WriteLine($"{message.Message}{Environment.NewLine}");
+            return;
         }
+
+        ConsoleColor originalColor = Console.ForegroundColor;
+        ConsoleColor levelColor = GetLevelColor(message.LogLevel, originalColor);
+
+        try
+        {
+            Console.Write($"[{message.TimeStamp}|");
+            Console.ForegroundColor = levelColor;
+            Console.Write(LogMessage.LogLevelToString(message.LogLevel));
+            Console.ForegroundColor = originalColor;
+            Console.Write($"|{message.CategoryName}]{Environment.NewLine}");
+            Console.ForegroundColor = levelColor;
+            Console.WriteLine($"{message.Message}{Environment.NewLine}");
+        }
+        finally
+        {
+            Console.ForegroundColor = originalColor;
+        }
+    }
+
+    private ConsoleColor GetLevelColor(LogLevel logLevel, ConsoleColor fallback)
+    {
+        return LogLevelColors.TryGetValue(logLevel, out ConsoleColor color) ? color : fallback;
     }
 
     internal void EnqueueMessage(LogMessage message)
@@ -158,8 +164,8 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
             return;
         }
 
-            try
-            {
+        try
+        {
             // Non-blocking add: a logger should never block application threads
             // when its queue is saturated. Drop the message and increment the
             // dropped counter so callers can observe back-pressure.
@@ -167,7 +173,7 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
             {
                 Interlocked.Increment(ref _droppedMessageCount);
             }
-            }
+        }
         catch (InvalidOperationException)
         {
             // Lost the race with CompleteAdding(); safe to ignore.
