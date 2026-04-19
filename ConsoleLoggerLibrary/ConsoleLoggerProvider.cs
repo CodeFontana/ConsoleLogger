@@ -11,6 +11,7 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
     private readonly ConcurrentDictionary<string, ConsoleLogger> _loggers = new(StringComparer.OrdinalIgnoreCase);
     private readonly BlockingCollection<LogMessage> _messageQueue = new(1024);
     private readonly Task _processMessages;
+    private long _droppedMessageCount;
 
     public LogLevel LogMinLevel { get; private set; } = LogLevel.Trace;
     public bool UseUtcTimestamp { get; set; } = false;
@@ -18,6 +19,12 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
     public bool IndentMultilineMessages { get; set; } = true;
     public bool EnableConsoleColors { get; set; } = true;
     public Func<LogMessage, string>? LogEntryFormatter { get; set; }
+
+    /// <summary>
+    /// Number of messages that were dropped because the queue was full at
+    /// the time of enqueue. Useful for diagnostics under bursty load.
+    /// </summary>
+    public long DroppedMessageCount => Interlocked.Read(ref _droppedMessageCount);
 
     public Dictionary<LogLevel, ConsoleColor> LogLevelColors { get; set; } = new()
     {
@@ -146,14 +153,24 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
 
     internal void EnqueueMessage(LogMessage message)
     {
-        if (_messageQueue.IsAddingCompleted == false)
+        if (_messageQueue.IsAddingCompleted)
         {
+            return;
+        }
+
             try
             {
-                _messageQueue.Add(message);
-                return;
+            // Non-blocking add: a logger should never block application threads
+            // when its queue is saturated. Drop the message and increment the
+            // dropped counter so callers can observe back-pressure.
+            if (_messageQueue.TryAdd(message) == false)
+            {
+                Interlocked.Increment(ref _droppedMessageCount);
             }
-            catch (InvalidOperationException) { }
+            }
+        catch (InvalidOperationException)
+        {
+            // Lost the race with CompleteAdding(); safe to ignore.
         }
     }
 
