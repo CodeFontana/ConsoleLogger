@@ -9,13 +9,10 @@ internal sealed class ConsoleLogger : ILogger
 
     public ConsoleLogger(ConsoleLoggerProvider consoleLoggerProvider, string categoryName)
     {
-        _consoleLoggerProvider = consoleLoggerProvider ?? throw new ArgumentException("Log provider must not be NULL");
+        ArgumentNullException.ThrowIfNull(consoleLoggerProvider);
+        ArgumentException.ThrowIfNullOrWhiteSpace(categoryName);
 
-        if (string.IsNullOrWhiteSpace(categoryName))
-        {
-            throw new ArgumentException("Log name must not be NULL or empty");
-        }
-
+        _consoleLoggerProvider = consoleLoggerProvider;
         _categoryName = categoryName;
     }
 
