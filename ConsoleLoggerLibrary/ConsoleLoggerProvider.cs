@@ -195,6 +195,7 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
         catch (TaskCanceledException) { }
         catch (AggregateException ex) when (ex.InnerExceptions.Count == 1 && ex.InnerExceptions[0] is TaskCanceledException) { }
 
+        _messageQueue.Dispose();
         _loggers.Clear();
     }
 }
