@@ -169,6 +169,13 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
 
     public void Log(LogMessage message)
     {
+        ArgumentNullException.ThrowIfNull(message);
+
+        if (message.LogLevel == LogLevel.None || message.LogLevel < LogMinLevel)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(message.Message))
         {
             return;
