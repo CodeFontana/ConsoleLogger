@@ -66,27 +66,20 @@ public static class ConsoleLoggerExtensions
 
     public static ILoggingBuilder AddConsoleLogger(this ILoggingBuilder builder, IConfiguration configuration, Action<ConsoleLoggerOptions>? configure = null)
     {
-        ConsoleLoggerProvider? consoleLoggerProvider = CreateFromConfiguration(configuration, configure = null);
+        ConsoleLoggerProvider consoleLoggerProvider = CreateFromConfiguration(configuration, configure);
 
-        if (consoleLoggerProvider != null)
-        {
-            builder.Services.AddSingleton<ILoggerProvider, ConsoleLoggerProvider>(
-                sp => consoleLoggerProvider);
-            builder.SetMinimumLevel(consoleLoggerProvider.LogMinLevel);
-        }
+        builder.Services.AddSingleton<ILoggerProvider, ConsoleLoggerProvider>(
+            sp => consoleLoggerProvider);
+        builder.SetMinimumLevel(consoleLoggerProvider.LogMinLevel);
 
         return builder;
     }
 
-    private static ConsoleLoggerProvider? CreateFromConfiguration(IConfiguration configuration, Action<ConsoleLoggerOptions>? configure)
+    private static ConsoleLoggerProvider CreateFromConfiguration(IConfiguration configuration, Action<ConsoleLoggerOptions>? configure)
     {
-        IConfigurationSection? consoleLogger = configuration.GetSection("Logging:ConsoleLogger");
+        ArgumentNullException.ThrowIfNull(configuration);
 
-        if (consoleLogger is null)
-        {
-            return null;
-        }
-
+        IConfigurationSection consoleLogger = configuration.GetSection("Logging:ConsoleLogger");
         ConsoleLoggerOptions options = new();
         string? minLevel = consoleLogger["LogMinLevel"];
 
@@ -148,7 +141,10 @@ public static class ConsoleLoggerExtensions
                 return color;
             });
 
-        if (logLevelColors != null)
+        // Only overwrite the defaults when the configuration actually supplied
+        // at least one color; otherwise an empty/missing section would wipe
+        // out the defaults and cause KeyNotFoundException at write time.
+        if (logLevelColors.Count > 0)
         {
             options.LogLevelColors = logLevelColors;
         }
