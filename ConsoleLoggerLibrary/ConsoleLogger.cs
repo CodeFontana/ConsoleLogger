@@ -21,12 +21,12 @@ internal sealed class ConsoleLogger : ILogger
 
     public bool IsEnabled(LogLevel logLevel)
     {
-        return logLevel >= _consoleLoggerProvider.LogMinLevel;
+        return logLevel != LogLevel.None && logLevel >= _consoleLoggerProvider.LogMinLevel;
     }
 
     IDisposable? ILogger.BeginScope<TState>(TState state)
     {
-        return null;
+        return NullScope.Instance;
     }
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
@@ -36,7 +36,7 @@ internal sealed class ConsoleLogger : ILogger
             return;
         }
 
-        ArgumentException.ThrowIfNullOrEmpty(nameof(formatter));
+        ArgumentNullException.ThrowIfNull(formatter);
         string message = formatter(state, exception);
         LogMessage logMessage = new(
             message,
@@ -46,5 +46,12 @@ internal sealed class ConsoleLogger : ILogger
             eventId,
             _consoleLoggerProvider.UseUtcTimestamp);
         _consoleLoggerProvider.EnqueueMessage(logMessage);
+    }
+
+    private sealed class NullScope : IDisposable
+    {
+        public static NullScope Instance { get; } = new();
+        private NullScope() { }
+        public void Dispose() { }
     }
 }
