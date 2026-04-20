@@ -6,66 +6,46 @@ namespace ConsoleLoggerLibrary;
 
 public static class ConsoleLoggerExtensions
 {
+    /// <summary>
+    /// Registers the console logger with default options. The default minimum
+    /// level is <see cref="LogLevel.Information"/>; override per-category
+    /// behavior via standard <c>Logging:LogLevel</c> configuration.
+    /// </summary>
     public static ILoggingBuilder AddConsoleLogger(this ILoggingBuilder builder)
     {
-        builder.Services.AddSingleton<ILoggerProvider, ConsoleLoggerProvider>(
-            sp => new ConsoleLoggerProvider(LogLevel.Information));
-        builder.SetMinimumLevel(LogLevel.Information);
-        return builder;
+        ArgumentNullException.ThrowIfNull(builder);
+        return AddConsoleLogger(builder, _ => { });
     }
 
-    public static ILoggingBuilder AddConsoleLogger(this ILoggingBuilder builder, LogLevel minLevel)
-    {
-        builder.Services.AddSingleton<ILoggerProvider, ConsoleLoggerProvider>(
-            sp => new ConsoleLoggerProvider(minLevel));
-        builder.SetMinimumLevel(minLevel);
-        return builder;
-    }
-
-    public static ILoggingBuilder AddConsoleLogger(this ILoggingBuilder builder, LogLevel minLevel, bool useUtcTimestamp)
-    {
-        builder.Services.AddSingleton<ILoggerProvider, ConsoleLoggerProvider>(
-            sp => new ConsoleLoggerProvider(minLevel, useUtcTimestamp));
-        builder.SetMinimumLevel(minLevel);
-        return builder;
-    }
-
-    public static ILoggingBuilder AddConsoleLogger(this ILoggingBuilder builder, LogLevel minLevel, bool useUtcTimestamp, bool multiLineFormat)
-    {
-        builder.Services.AddSingleton<ILoggerProvider, ConsoleLoggerProvider>(
-            sp => new ConsoleLoggerProvider(minLevel, useUtcTimestamp, multiLineFormat));
-        builder.SetMinimumLevel(minLevel);
-        return builder;
-    }
-
-    public static ILoggingBuilder AddConsoleLogger(this ILoggingBuilder builder, LogLevel minLevel, bool useUtcTimestamp, bool multiLineFormat, bool indentMultilineMessages)
-    {
-        builder.Services.AddSingleton<ILoggerProvider, ConsoleLoggerProvider>(
-            sp => new ConsoleLoggerProvider(minLevel, useUtcTimestamp, multiLineFormat, indentMultilineMessages));
-        builder.SetMinimumLevel(minLevel);
-        return builder;
-    }
-
-    public static ILoggingBuilder AddConsoleLogger(this ILoggingBuilder builder, LogLevel minLevel, bool useUtcTimestamp, bool multiLineFormat, bool indentMultilineMessages, bool enableConsoleColors)
-    {
-        builder.Services.AddSingleton<ILoggerProvider, ConsoleLoggerProvider>(
-            sp => new ConsoleLoggerProvider(minLevel, useUtcTimestamp, multiLineFormat, indentMultilineMessages, enableConsoleColors));
-        builder.SetMinimumLevel(minLevel);
-        return builder;
-    }
-
+    /// <summary>
+    /// Registers the console logger using a code-based options configuration
+    /// callback.
+    /// </summary>
     public static ILoggingBuilder AddConsoleLogger(this ILoggingBuilder builder, Action<ConsoleLoggerOptions> configure)
     {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(configure);
+
         ConsoleLoggerOptions options = new();
         configure(options);
+
         builder.Services.AddSingleton<ILoggerProvider, ConsoleLoggerProvider>(
             sp => new ConsoleLoggerProvider(options));
         builder.SetMinimumLevel(options.LogMinLevel);
         return builder;
     }
 
+    /// <summary>
+    /// Registers the console logger using values from the
+    /// <c>Logging:ConsoleLogger</c> configuration section. An optional
+    /// <paramref name="configure"/> callback runs after binding so code can
+    /// override individual values.
+    /// </summary>
     public static ILoggingBuilder AddConsoleLogger(this ILoggingBuilder builder, IConfiguration configuration, Action<ConsoleLoggerOptions>? configure = null)
     {
+        ArgumentNullException.ThrowIfNull(builder);
+        ArgumentNullException.ThrowIfNull(configuration);
+
         ConsoleLoggerProvider consoleLoggerProvider = CreateFromConfiguration(configuration, configure);
 
         builder.Services.AddSingleton<ILoggerProvider, ConsoleLoggerProvider>(

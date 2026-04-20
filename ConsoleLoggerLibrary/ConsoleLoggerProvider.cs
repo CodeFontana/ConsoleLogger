@@ -39,26 +39,10 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
         [LogLevel.None] = ConsoleColor.White
     };
 
-    public ConsoleLoggerProvider(LogLevel logMinLevel = LogLevel.Trace,
-                                 bool useUtcTimestamp = false,
-                                 bool multiLineFormat = false,
-                                 bool indentMultilineMessages = true,
-                                 bool enableConsoleColors = true,
-                                 Func<LogMessage, string>? logEntryFormatter = null) : this(new()
-                                 {
-                                     LogMinLevel = logMinLevel,
-                                     UseUtcTimestamp = useUtcTimestamp,
-                                     MultiLineFormat = multiLineFormat,
-                                     IndentMultilineMessages = indentMultilineMessages,
-                                     EnableConsoleColors = enableConsoleColors,
-                                     LogEntryFormatter = logEntryFormatter
-                                 })
-    {
-
-    }
-
     public ConsoleLoggerProvider(ConsoleLoggerOptions options)
     {
+        ArgumentNullException.ThrowIfNull(options);
+
         LogMinLevel = options.LogMinLevel;
         UseUtcTimestamp = options.UseUtcTimestamp;
         MultiLineFormat = options.MultiLineFormat;
