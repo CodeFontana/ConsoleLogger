@@ -2,7 +2,7 @@
 
 namespace ConsoleLoggerLibrary;
 
-public sealed class LogMessage
+public sealed record LogMessage
 {
     public string Message { get; init; }
     public Exception? Exception { get; init; }
@@ -54,37 +54,17 @@ public sealed class LogMessage
     /// </summary>
     /// <param name="logLevel">A log level to convert.</param>
     /// <returns>String representation of the log level.</returns>
-    internal static string LogLevelToString(LogLevel logLevel)
+    internal static string LogLevelToString(LogLevel logLevel) => logLevel switch
     {
-        string result = "";
-
-        switch (logLevel)
-        {
-            case LogLevel.Trace:
-                result += "TRCE";
-                break;
-            case LogLevel.Warning:
-                result += "WARN";
-                break;
-            case LogLevel.Debug:
-                result += "DBUG";
-                break;
-            case LogLevel.Information:
-                result += "INFO";
-                break;
-            case LogLevel.Error:
-                result += "ERRR";
-                break;
-            case LogLevel.Critical:
-                result += "CRIT";
-                break;
-            case LogLevel.None:
-                result += "    ";
-                break;
-        }
-
-        return result;
-    }
+        LogLevel.Trace => "TRCE",
+        LogLevel.Debug => "DBUG",
+        LogLevel.Information => "INFO",
+        LogLevel.Warning => "WARN",
+        LogLevel.Error => "ERRR",
+        LogLevel.Critical => "CRIT",
+        LogLevel.None => "    ",
+        _ => "????",
+    };
 
     /// <summary>
     /// Indents multi-line messages to align with the message header, for
