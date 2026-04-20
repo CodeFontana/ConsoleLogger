@@ -136,9 +136,4 @@ public sealed record LogMessage
 
         return builder.ToString();
     }
-
-    public override string ToString()
-    {
-        return $"{Header}{Message}";
-    }
 }
