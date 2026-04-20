@@ -100,6 +100,10 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
             return;
         }
 
+        string trailingHeader = message.EventIdText.Length > 0
+            ? $"|{message.CategoryName}|{message.EventIdText}|"
+            : $"|{message.CategoryName}|";
+
         ConsoleColor originalColor = Console.ForegroundColor;
         ConsoleColor levelColor = GetLevelColor(message.LogLevel, originalColor);
 
@@ -109,7 +113,7 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
             Console.ForegroundColor = levelColor;
             Console.Write(LogMessage.LogLevelToString(message.LogLevel));
             Console.ForegroundColor = originalColor;
-            Console.Write($"|{message.CategoryName}|");
+            Console.Write(trailingHeader);
             Console.ForegroundColor = levelColor;
             Console.WriteLine(IndentMultilineMessages ? message.PaddedMessage : message.Message);
         }
@@ -121,11 +125,15 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
 
     private void WriteMultiLineFormatMessage(LogMessage message)
     {
+        string categorySegment = message.EventIdText.Length > 0
+            ? $"|{message.CategoryName}|{message.EventIdText}]{Environment.NewLine}"
+            : $"|{message.CategoryName}]{Environment.NewLine}";
+
         if (EnableConsoleColors == false)
         {
             Console.Write($"[{message.TimeStamp}|");
             Console.Write(LogMessage.LogLevelToString(message.LogLevel));
-            Console.Write($"|{message.CategoryName}]{Environment.NewLine}");
+            Console.Write(categorySegment);
             Console.WriteLine($"{message.Message}{Environment.NewLine}");
             return;
         }
@@ -139,7 +147,7 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
             Console.ForegroundColor = levelColor;
             Console.Write(LogMessage.LogLevelToString(message.LogLevel));
             Console.ForegroundColor = originalColor;
-            Console.Write($"|{message.CategoryName}]{Environment.NewLine}");
+            Console.Write(categorySegment);
             Console.ForegroundColor = levelColor;
             Console.WriteLine($"{message.Message}{Environment.NewLine}");
         }
