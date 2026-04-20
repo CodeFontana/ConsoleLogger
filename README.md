@@ -6,6 +6,10 @@
 * Single-line, Multi-line or Custom log entry formats.
 * Indent multiline messages for easier reading and analysis.
 * Configurable color scheme for Console log messages, for easier reading.
+* Per-provider log level filtering via `Logging:ConsoleLogger:LogLevel` in `appsettings.json`.
+
+## Target frameworks
+.NET 8, .NET 9, .NET 10.
 
 ![Snag_16287bf1](https://user-images.githubusercontent.com/41308769/177916624-85be1c05-490d-4c6b-90c8-fb77ed04950d.png)
 
@@ -18,7 +22,7 @@
 ## How to use
 
 ### Scenario #1: Quickstart
-```
+```csharp
 using ConsoleLoggerLibrary;
 
 ...<omitted>...
@@ -31,9 +35,13 @@ using ConsoleLoggerLibrary;
 ```
 
 ### Scenario #2: Using appsettings.json
-  
+
+When the host registers `IConfiguration` (e.g. via `Host.CreateDefaultBuilder`),
+the no-arg `AddConsoleLogger()` automatically binds options from the
+`Logging:ConsoleLogger` section — no need to pass `IConfiguration` explicitly.
+
 **appsettings.json** -- all options shown
-```
+```json
 {
   "Logging": {
     "LogLevel": {
@@ -44,7 +52,7 @@ using ConsoleLoggerLibrary;
     "ConsoleLogger": {
       "LogMinLevel": "Debug",
       "UseUtcTimestamp": false,
-      "MultilineFormat": false,
+      "MultiLineFormat": false,
       "IndentMultilineMessages": true,
       "EnableConsoleColors": true,
       "LogLevelColors": {
@@ -60,9 +68,9 @@ using ConsoleLoggerLibrary;
   }
 }
 ```
-  
+
 **Program.cs** -- full file for complete context
-```
+```csharp
 using ConsoleLoggerLibrary;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -81,7 +89,7 @@ internal class Program
                 .ConfigureLogging((context, builder) =>
                 {
                     builder.ClearProviders();
-                    builder.AddConsoleLogger(context.Configuration);
+                    builder.AddConsoleLogger();
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
@@ -96,11 +104,14 @@ internal class Program
     }
 }
 ```
-  
+
+> If your host doesn't register `IConfiguration` automatically, pass it
+> explicitly: `builder.AddConsoleLogger(context.Configuration);`
+
 ### Scenario #3: Using ConfigureLogging
-  
+
 **Program.cs**  -- full file for complete context, all ConsoleLoggerOptions shown
-```
+```csharp
 using ConsoleLoggerLibrary;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -126,7 +137,7 @@ internal class Program
                         configure.MultiLineFormat = false;
                         configure.IndentMultilineMessages = true;
                         configure.EnableConsoleColors = true;
-                        configure.LogLevelColors = new Dictionary<LogLevel, ConsoleColor>()
+                        configure.LogLevelColors = new()
                         {
                             [LogLevel.Trace] = ConsoleColor.Cyan,
                             [LogLevel.Debug] = ConsoleColor.Blue,
@@ -152,21 +163,49 @@ internal class Program
 }
 ```
 
-## Indentation 
-IndentMultilineMessages=**true**
+## Per-provider log level filtering
+
+Because the provider registers itself via
+`LoggerProviderOptions.RegisterProviderOptions`, you can scope per-category
+log levels to *just this provider* (independent of the global `Logging:LogLevel`
+section) by adding a `LogLevel` subsection under `ConsoleLogger`:
+
+```json
+"Logging": {
+  "LogLevel": {
+    "Default": "Information"
+  },
+  "ConsoleLogger": {
+    "LogMinLevel": "Trace",
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.Hosting.Lifetime": "Warning",
+      "MyApp.Diagnostics": "Trace"
+    }
+  }
+}
 ```
-2022-04-04--18.10.20|INFO|ConsoleLoggerDemo.App|{
-                                                 "Date": "6/24/2022",
+
+`LogMinLevel` sets the floor honored by this provider. The framework's
+global `MinLevel` is automatically lowered to match when `LogMinLevel`
+is more permissive (e.g. `Trace`), so per-provider Trace/Debug entries
+aren't filtered out before reaching the writer.
+
+## Indentation
+IndentMultilineMessages=**true**
+```text
+2026-04-19--18.10.20|INFO|ConsoleLoggerDemo.App|{
+                                                 "Date": "4/19/2026",
                                                  "Location": "Center Moriches",
                                                  "TemperatureCelsius": 20,
                                                  "Summary": "Nice"
                                                 }
 ```
-  
+
 IndentMultilineMessages=**false**
-```
-2022-04-04--18.11.19|INFO|ConsoleLoggerDemo.App|{
-  "Date": "6/24/2022",
+```text
+2026-04-19--18.11.19|INFO|ConsoleLoggerDemo.App|{
+  "Date": "4/19/2026",
   "Location": "Center Moriches",
   "TemperatureCelsius": 20,
   "Summary": "Nice"
@@ -174,8 +213,16 @@ IndentMultilineMessages=**false**
 ```
 Note: The IndentMultilineMessages option is only for the Single-Line message format.
 
-## Roadmap
-* No current plans
+## Debugging
+The package ships portable PDBs with
+[Source Link](https://github.com/dotnet/sourcelink) embedded and a
+companion `.snupkg` symbol package. Enable "Source Link support" in
+Visual Studio (or JetBrains Rider) to step into the library directly
+from your debugger.
+
+## Releases
+See [GitHub Releases](https://github.com/CodeFontana/ConsoleLogger/releases)
+for the changelog.
 
 ## Reference
 https://docs.microsoft.com/en-us/dotnet/core/extensions/custom-logging-provider

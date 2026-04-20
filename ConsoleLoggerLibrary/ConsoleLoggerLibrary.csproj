@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
 
     <PackageId>CodeFoxtrot.ConsoleLogger</PackageId>
-    <Version>1.0.7</Version>
+    <Version>1.0.8</Version>
     <Authors>CodeFoxtrot</Authors>
     <Company>CodeFoxtrot</Company>
     <Product>ConsoleLogger</Product>
@@ -17,8 +17,8 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>CodeFoxtrot Logging Log ConsoleLogger Logger</PackageTags>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <AssemblyVersion>1.0.7.0</AssemblyVersion>
-    <FileVersion>1.0.7.0</FileVersion>
+    <AssemblyVersion>1.0.8.0</AssemblyVersion>
+    <FileVersion>1.0.8.0</FileVersion>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
