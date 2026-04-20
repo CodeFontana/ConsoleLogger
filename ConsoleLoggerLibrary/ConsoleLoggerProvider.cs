@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Collections.Frozen;
 using System.Runtime.Versioning;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -30,16 +31,30 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
     /// </summary>
     public long DroppedMessageCount => Interlocked.Read(ref _droppedMessageCount);
 
-    public Dictionary<LogLevel, ConsoleColor> LogLevelColors { get; private set; } = new()
-    {
-        [LogLevel.Trace] = ConsoleColor.Cyan,
-        [LogLevel.Debug] = ConsoleColor.Blue,
-        [LogLevel.Information] = ConsoleColor.Green,
-        [LogLevel.Warning] = ConsoleColor.Yellow,
-        [LogLevel.Error] = ConsoleColor.Red,
-        [LogLevel.Critical] = ConsoleColor.DarkRed,
-        [LogLevel.None] = ConsoleColor.White
-    };
+    /// <summary>
+    /// Immutable fallback palette used when no LogLevelColors are supplied
+    /// via options. FrozenDictionary gives optimal lookup performance for
+    /// the dequeue-thread hot path.
+    /// </summary>
+    private static readonly FrozenDictionary<LogLevel, ConsoleColor> s_defaultLevelColors =
+        new Dictionary<LogLevel, ConsoleColor>
+        {
+            [LogLevel.Trace] = ConsoleColor.Cyan,
+            [LogLevel.Debug] = ConsoleColor.Blue,
+            [LogLevel.Information] = ConsoleColor.Green,
+            [LogLevel.Warning] = ConsoleColor.Yellow,
+            [LogLevel.Error] = ConsoleColor.Red,
+            [LogLevel.Critical] = ConsoleColor.DarkRed,
+            [LogLevel.None] = ConsoleColor.White,
+        }.ToFrozenDictionary();
+
+    /// <summary>
+    /// Immutable snapshot of the level-to-color map. Reassigned wholesale
+    /// in <see cref="ApplyOptions"/> so the dequeue thread always observes
+    /// a consistent instance — callers that mutate the source options
+    /// dictionary cannot affect in-flight writes.
+    /// </summary>
+    public IReadOnlyDictionary<LogLevel, ConsoleColor> LogLevelColors { get; private set; } = s_defaultLevelColors;
 
     public ConsoleLoggerProvider(IOptionsMonitor<ConsoleLoggerOptions> options)
     {
@@ -62,7 +77,13 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
         MultiLineFormat = options.MultiLineFormat;
         IndentMultilineMessages = options.IndentMultilineMessages;
         EnableConsoleColors = options.EnableConsoleColors;
-        LogLevelColors = options.LogLevelColors;
+
+        // Snapshot the caller-supplied dictionary so post-bind mutations on
+        // the options instance cannot race with the dequeue thread.
+        LogLevelColors = options.LogLevelColors is null
+            ? s_defaultLevelColors
+            : options.LogLevelColors.ToFrozenDictionary();
+
         LogEntryFormatter = options.LogEntryFormatter;
     }
 
