@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Runtime.Versioning;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace ConsoleLoggerLibrary;
 
@@ -13,14 +14,15 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
     private readonly ConcurrentDictionary<string, ConsoleLogger> _loggers = new(StringComparer.OrdinalIgnoreCase);
     private readonly BlockingCollection<LogMessage> _messageQueue = new(DefaultQueueCapacity);
     private readonly Task _processMessages;
+    private readonly IDisposable? _onChangeRegistration;
     private long _droppedMessageCount;
 
     public LogLevel LogMinLevel { get; private set; } = LogLevel.Trace;
-    public bool UseUtcTimestamp { get; set; } = false;
-    public bool MultiLineFormat { get; set; } = false;
-    public bool IndentMultilineMessages { get; set; } = true;
-    public bool EnableConsoleColors { get; set; } = true;
-    public Func<LogMessage, string>? LogEntryFormatter { get; set; }
+    public bool UseUtcTimestamp { get; private set; }
+    public bool MultiLineFormat { get; private set; }
+    public bool IndentMultilineMessages { get; private set; } = true;
+    public bool EnableConsoleColors { get; private set; } = true;
+    public Func<LogMessage, string>? LogEntryFormatter { get; private set; }
 
     /// <summary>
     /// Number of messages that were dropped because the queue was full at
@@ -28,7 +30,7 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
     /// </summary>
     public long DroppedMessageCount => Interlocked.Read(ref _droppedMessageCount);
 
-    public Dictionary<LogLevel, ConsoleColor> LogLevelColors { get; set; } = new()
+    public Dictionary<LogLevel, ConsoleColor> LogLevelColors { get; private set; } = new()
     {
         [LogLevel.Trace] = ConsoleColor.Cyan,
         [LogLevel.Debug] = ConsoleColor.Blue,
@@ -39,9 +41,21 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
         [LogLevel.None] = ConsoleColor.White
     };
 
-    public ConsoleLoggerProvider(ConsoleLoggerOptions options)
+    public ConsoleLoggerProvider(IOptionsMonitor<ConsoleLoggerOptions> options)
     {
         ArgumentNullException.ThrowIfNull(options);
+
+        ApplyOptions(options.CurrentValue);
+        _onChangeRegistration = options.OnChange(ApplyOptions);
+        _processMessages = Task.Factory.StartNew(DequeueMessages, this, TaskCreationOptions.LongRunning);
+    }
+
+    private void ApplyOptions(ConsoleLoggerOptions options)
+    {
+        if (options is null)
+        {
+            return;
+        }
 
         LogMinLevel = options.LogMinLevel;
         UseUtcTimestamp = options.UseUtcTimestamp;
@@ -50,7 +64,6 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
         EnableConsoleColors = options.EnableConsoleColors;
         LogLevelColors = options.LogLevelColors;
         LogEntryFormatter = options.LogEntryFormatter;
-        _processMessages = Task.Factory.StartNew(DequeueMessages, this, TaskCreationOptions.LongRunning);
     }
 
     private static void DequeueMessages(object? state)
@@ -193,6 +206,7 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
 
     public void Dispose()
     {
+        _onChangeRegistration?.Dispose();
         _messageQueue.CompleteAdding();
 
         try
