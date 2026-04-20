@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace ConsoleLoggerDemo;
 
-public class App : IHostedService
+internal sealed class App : IHostedService
 {
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
     private readonly ILogger<App> _logger;
