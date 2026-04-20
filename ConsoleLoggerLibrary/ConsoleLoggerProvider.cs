@@ -91,69 +91,84 @@ internal sealed class ConsoleLoggerProvider : ILoggerProvider, IDisposable
         }
     }
 
+    /// <summary>
+    /// Serializes the multi-segment colored writes of a single log entry so
+    /// concurrent providers or external Console writers cannot interleave
+    /// between the prefix/level/middle/body runs and bleed colors.
+    /// </summary>
+    private static readonly object s_consoleSync = new();
+
     private void WriteSingleLineFormatMessage(LogMessage message)
     {
+        string body = IndentMultilineMessages ? message.PaddedMessage : message.Message;
+
         if (EnableConsoleColors == false)
         {
-            string body = IndentMultilineMessages ? message.PaddedMessage : message.Message;
-            Console.WriteLine($"{message.Header}{body}");
+            // Single atomic WriteLine: no color flips, no tearing window.
+            Console.Out.WriteLine($"{message.Header}{body}");
             return;
         }
 
-        string trailingHeader = message.EventIdText.Length > 0
+        // Build every segment up-front so no allocations occur inside the
+        // color-flip critical section.
+        string prefix = $"{message.TimeStamp}|";
+        string levelText = LogMessage.LogLevelToString(message.LogLevel);
+        string middle = message.EventIdText.Length > 0
             ? $"|{message.CategoryName}|{message.EventIdText}|"
             : $"|{message.CategoryName}|";
 
-        ConsoleColor originalColor = Console.ForegroundColor;
-        ConsoleColor levelColor = GetLevelColor(message.LogLevel, originalColor);
-
-        try
-        {
-            Console.Write($"{message.TimeStamp}|");
-            Console.ForegroundColor = levelColor;
-            Console.Write(LogMessage.LogLevelToString(message.LogLevel));
-            Console.ForegroundColor = originalColor;
-            Console.Write(trailingHeader);
-            Console.ForegroundColor = levelColor;
-            Console.WriteLine(IndentMultilineMessages ? message.PaddedMessage : message.Message);
-        }
-        finally
-        {
-            Console.ForegroundColor = originalColor;
-        }
+        WriteColoredLine(prefix, levelText, middle, body, GetLevelColor(message.LogLevel, ConsoleColor.Gray));
     }
 
     private void WriteMultiLineFormatMessage(LogMessage message)
     {
-        string categorySegment = message.EventIdText.Length > 0
-            ? $"|{message.CategoryName}|{message.EventIdText}]{Environment.NewLine}"
-            : $"|{message.CategoryName}]{Environment.NewLine}";
+        string headerTail = message.EventIdText.Length > 0
+            ? $"|{message.CategoryName}|{message.EventIdText}]"
+            : $"|{message.CategoryName}]";
 
         if (EnableConsoleColors == false)
         {
-            Console.Write($"[{message.TimeStamp}|");
-            Console.Write(LogMessage.LogLevelToString(message.LogLevel));
-            Console.Write(categorySegment);
-            Console.WriteLine($"{message.Message}{Environment.NewLine}");
+            // Coalesce four Writes into a single atomic WriteLine.
+            Console.Out.WriteLine(
+                $"[{message.TimeStamp}|{LogMessage.LogLevelToString(message.LogLevel)}{headerTail}{Environment.NewLine}{message.Message}{Environment.NewLine}");
             return;
         }
 
-        ConsoleColor originalColor = Console.ForegroundColor;
-        ConsoleColor levelColor = GetLevelColor(message.LogLevel, originalColor);
+        string prefix = $"[{message.TimeStamp}|";
+        string levelText = LogMessage.LogLevelToString(message.LogLevel);
+        string middle = $"{headerTail}{Environment.NewLine}";
+        string body = $"{message.Message}{Environment.NewLine}";
 
-        try
+        WriteColoredLine(prefix, levelText, middle, body, GetLevelColor(message.LogLevel, ConsoleColor.Gray));
+    }
+
+    /// <summary>
+    /// Emits a four-segment colored line atomically: <paramref name="prefix"/>
+    /// in the default color, <paramref name="levelText"/> and
+    /// <paramref name="body"/> in <paramref name="levelColor"/>, and
+    /// <paramref name="middle"/> in the default color. The whole sequence is
+    /// held under a single console lock so concurrent writers cannot
+    /// interleave between segments.
+    /// </summary>
+    private static void WriteColoredLine(string prefix, string levelText, string middle, string body, ConsoleColor levelColor)
+    {
+        lock (s_consoleSync)
         {
-            Console.Write($"[{message.TimeStamp}|");
-            Console.ForegroundColor = levelColor;
-            Console.Write(LogMessage.LogLevelToString(message.LogLevel));
-            Console.ForegroundColor = originalColor;
-            Console.Write(categorySegment);
-            Console.ForegroundColor = levelColor;
-            Console.WriteLine($"{message.Message}{Environment.NewLine}");
-        }
-        finally
-        {
-            Console.ForegroundColor = originalColor;
+            ConsoleColor originalColor = Console.ForegroundColor;
+            try
+            {
+                Console.Out.Write(prefix);
+                Console.ForegroundColor = levelColor;
+                Console.Out.Write(levelText);
+                Console.ForegroundColor = originalColor;
+                Console.Out.Write(middle);
+                Console.ForegroundColor = levelColor;
+                Console.Out.WriteLine(body);
+            }
+            finally
+            {
+                Console.ForegroundColor = originalColor;
+            }
         }
     }
 
